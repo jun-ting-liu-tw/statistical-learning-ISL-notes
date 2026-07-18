@@ -1,0 +1,197 @@
+---
+title: "ISL_Ch3_Linear Regression"
+date: "2026-07-15"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+---
+
+```{r, include=FALSE}
+library(MASS)
+library(ISLR2)
+library(car)
+```
+
+# 3.6.2 Simple Linear Regression
+
+data set: Boston
+
+y : medv 房價中位數（單位：千美元）
+
+x : lstat 低社經地位人口比例 (%)
+
+```{r}
+lm.fit = lm(medv ~ lstat, data = Boston)
+summary(lm.fit)
+```
+
+## Confidence Interval and Prediction Intervals
+
+
+
+```{r}
+confint(lm.fit)
+```
+
+```{r}
+predict(lm.fit, data.frame(lstat = c(5, 10, 15)),
+        interval = "prediction")
+```
+## Plot
+
+```{r}
+plot(Boston$lstat, Boston$medv)
+abline(lm.fit, lwd = 3, col = "red")
+```
+
+1. Residual vs Fitted：檢查線性關係、與變異數是否同質。
+
+2. Normal Q-Q：檢查殘差是否近似常態分配。
+
+3. Scale-Location：檢查同質變異（同1. Y爲$\sqrt(|standardized \ residuals|)$）
+
+4. Residual vs Leverage：找出高影響（Influential Observation）的觀察值。
+
+```{r}
+par(mfrow = c(2, 2))
+plot(lm.fit)
+```
+
+## Residuals and Studentized Residuals
+
+studentized residuals > rstudent() :把第 i 個觀測值拿掉後，用剩下的資料估計誤差標準差，最後去標準化第 i 個殘差
+
+```{r}
+par(mfrow = c(1,2))
+
+plot(fitted(lm.fit),
+     residuals(lm.fit),
+     xlab = "Fitted values",
+     ylab = "Residuals")
+
+plot(fitted(lm.fit),
+     rstudent(lm.fit),
+     xlab = "Fitted values",
+     ylab = "Externally studentized residuals"
+     )
+
+#predict(lm.fit) as y hat
+```
+
+# 3.6.3 Multiple Linear Regression
+
+```{r}
+lm.fit.m = lm(medv ~ lstat + age, data = Boston)
+summary(lm.fit.m)
+```
+
+## Full Model
+
+```{r}
+# using all predictors
+lm.fit.all = lm(medv ~ ., data=Boston)
+summary(lm.fit.all)
+```
+
+```{r}
+summary(lm.fit.all)$r.sq # R squared
+summary(lm.fit.all)$sigma 
+```
+
+# Variance Inflation Factor(VIF)
+
+```{r}
+#library(car)
+vif(lm.fit.all)
+```
+
+
+```{r}
+#age has a high p-value
+lm.fit1 = lm(medv ~. - age, data = Boston)
+summary(lm.fit1)
+```
+
+## 3.6.4 Interaction
+
+```{r}
+lm.fit.interaction = lm(medv ~ lstat * age, data = Boston)
+summary(lm.fit.interaction)
+
+```
+
+
+## 3.6.5 Non-linear Transformations of the Predictors
+
+$ Y = \beta _0 + \beta _1 x + \beta _2 x^2 + \epsilon$
+
+```{r}
+lm.fit2 = lm(medv ~ lstat + I(lstat^2), data = Boston)
+#I() 將裡面的內容當作一般數學運算，不當成公式語法
+summary(lm.fit2)
+```
+
+# ANOVA
+
+Partial F test
+
+Full model : $Y = \beta _0 + \beta _1 x + \beta _2 x^2 + \epsilon$
+
+Reduced model: $Y = \beta _0 + \beta _1 x + \epsilon$
+
+$H_0 : \beta _2 =0$
+
+```{r}
+anova(lm.fit,lm.fit2)
+#RSS（Residual Sum of Squares） = SSE
+```
+
+## Plot
+
+```{r}
+par(mfrow = c(2, 2))
+plot(lm.fit2)
+```
+
+##  Additional Polynomial terms
+
+$Y = \beta_0 + \beta_1 x + \beta_2 x^2 + \beta _3 x^3+\beta_4 x^4 +\beta _5 x^5  + \epsilon$
+
+```{r}
+#poly()
+#lm(medv ~ log(rm), data = Boston)) #log transformation
+lm.fit5 = lm(medv ~ poly(lstat, 5), data = Boston)
+summary(lm.fit5)
+```
+
+# 3.6.6 Qualitative Predictors
+
+```{r}
+head(Carseats)
+```
+
+.＝其他所有變數；:＝只加入兩個變數的乘積交互作用；*＝兩個主效果加上交互作用。
+note ':' 與 '*' 的功能不一樣
+
+```{r}
+lm.fit.q = lm(Sales ~ . + Income:Advertising + Price:Age, data = Carseats)
+summary(lm.fit.q)
+```
+
+## Dummy variable coding
+
+貨架位置（ShelveLoc): Bad（差）、Medium（中）、Good（好）。
+
+Bad 是 reference level。
+
+ShelveLocGood: Good 相對於Bad的平均差異。
+
+ShelveLocGood: Medium相對於Bad的平均差異。
+
+```{r}
+contrasts(Carseats$ShelveLoc)
+```
+
